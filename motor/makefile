@@ -1,7 +1,15 @@
-CC=arm-linux-gcc
-motor: motor.o
-	$(CC) motor.o -s -o motor
-motor.o: motor.c
-	$(CC) -c motor.c -o motor.o
+ifneq ($(KERNELRELEASE),)
+	obj-m := motor.o
+else
+	KERNELDIR := $(EC535)/gumstix/oe/linux-2.6.21/
+	PWD := $(shell pwd)
+	ARCH := arm
+	CROSS := arm-linux-
+
+default:
+	$(MAKE) -C $(KERNELDIR) M=$(PWD) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS) modules
+
 clean:
-	rm -rf *.o motor
+	rm -rf *.o *.mod* Module.* .motor* *.ko
+
+endif

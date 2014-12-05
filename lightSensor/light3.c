@@ -86,7 +86,7 @@ int main()
 		buf |= buf2;
 		channel1 = buf;
 
-		Lux = CalculateLux(0,1,channel1,channel0,0);
+		Lux = CalculateLux(0,1,channel0,channel1,0);
 		FILE * pFile = fopen("/proc/fortune", "w");
 		
 		sprintf(str,"%d",Lux);

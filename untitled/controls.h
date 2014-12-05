@@ -8,11 +8,11 @@ class controls
 public:
     controls();
     ~controls();
-    int calculate(double iso, double aperture, double shutter, double exposure, int Lux);
+    int calculate(double iso, double aperture, double shutter, double exposure, double Lux);
 
 private:
     motor *turner;
-    int calib;
+    double calib;
 };
 
 #endif // CONTROLS_H

@@ -123,7 +123,7 @@ static int motor_init(void)
     motor_reset.function = &m_reset;
     step = 0;
 
-    k_motor = ktime_set(0,2*1E4L);
+    k_motor = ktime_set(0,20*1E5L);
 
     printk(KERN_INFO "motor: Module installed\n");
   }
@@ -152,7 +152,6 @@ static ssize_t motor_write( struct file *filp, const char __user *buff,
   if (copy_from_user(buffer, buff, len)){
     return -EFAULT;
   }
-  printk(KERN_ALERT"command received: %s\n",buffer);
 
   switch(buffer[0]){
     case 'f':
@@ -219,7 +218,7 @@ static enum hrtimer_restart motor_handler(struct hrtimer *timer)
   pxa_gpio_set_value(P1,0);
   //mod_timer(&(motor_reset),jiffies+((int) 0.05 * msec_to_jiffies(1));
   hrtimer_start(&motor_reset,k_motor_reset,HRTIMER_MODE_REL);
-  /*msleep(1);
+  msleep(1);
   pxa_gpio_set_value(P1,0);
   count++;
   if(count < 5)
@@ -253,19 +252,19 @@ static void do_step(void)
       pxa_gpio_set_value(P3,1);
       pxa_gpio_set_value(P4,0);
       break;
-      case 1:
+    case 1:
       pxa_gpio_set_value(P1,0);
       pxa_gpio_set_value(P2,1);
       pxa_gpio_set_value(P3,1);
       pxa_gpio_set_value(P4,0);
       break;
-      case 2:
+    case 2:
       pxa_gpio_set_value(P1,0);
       pxa_gpio_set_value(P2,1);
       pxa_gpio_set_value(P3,0);
       pxa_gpio_set_value(P4,1);
       break;
-      case 3:
+    case 3:
       pxa_gpio_set_value(P1,1);
       pxa_gpio_set_value(P2,0);
       pxa_gpio_set_value(P3,0);

@@ -1,0 +1,7 @@
+CC=arm-linux-gcc
+motor_con: motor_con.o
+	$(CC) motor_con.o -s -o motor_con
+motor_con.o: motor_con.c
+	$(CC) -c motor_con.c -o motor_con.o
+clean:
+	rm -rf *.o motor_con

@@ -1,0 +1,1 @@
+cmd_/ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/motor/motor.ko := arm-linux-ld -EL  -r -o /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/motor/motor.ko /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/motor/motor.o /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/motor/motor.mod.o

@@ -1,12 +1,16 @@
 #include "motor.h"
 #include <stdlib.h>
 #include <cstring>
-motor::motor(int max, const char* device)
+motor::motor(int max, char* device)
 {
     char buffR[4];
     char buffW[5];
-    this->dev = fopen(device,"rw");
+    //this->dev = fopen(device,"w");
+    this->deviceName = device;
+
     this->save = fopen("/etc/lux/stepsData","r");
+    if(!this->dev)
+        printf("no device found\n");
     if(!this->save)
     {
         this->steps = 0;
@@ -19,7 +23,7 @@ motor::motor(int max, const char* device)
         strcpy(buffW+1,buffR);
         fwrite(buffW,5,1,dev);
     }
-    fclose(this->save);
+    //fclose(this->save);
     this->maxStep = max;
 }
 
@@ -54,6 +58,9 @@ int motor::moveMotor(char dir, int step)
     // EX: 'b50' - backwards 50 steps
     char command[4];
 
+    if(!this->dev)
+        printf("file llost \n");
+
     if(dir == 'b' && steps == 0)
     {
         return -1;
@@ -72,9 +79,14 @@ int motor::moveMotor(char dir, int step)
     {
         step = maxStep - steps;
     }
-    sprintf(command,"%c%d",dir,step);
-    if(fwrite(command,4,1,dev) != 4)
+    sprintf(command,"%cg%d",dir,step);
+    printf("%s\n",command);
+    this->dev = fopen(this->deviceName,"w");
+    int ret = fwrite(command,sizeof(command),1,dev);
+    fclose(this->dev);
+    if(ret != sizeof(command))
     {
+        printf("fwrite: %d\n",ret);
         return 2;
     }
     return 0;
