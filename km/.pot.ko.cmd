@@ -1,0 +1,1 @@
+cmd_/ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/km/pot.ko := /ad/eng/courses/ec/ec535/gumstix/oe/cross/bin/arm-linux-ld -EL  -r -o /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/km/pot.ko /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/km/pot.o /ad/eng/users/t/e/tedye/Desktop/Lux_EC535-tedye/km/pot.mod.o

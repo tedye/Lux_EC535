@@ -3,8 +3,9 @@
 
 #include <QVBoxLayout>
 #include <QPushButton>
-#include <QTextEdit>
+#include <QLabel>
 #include <QString>
+#include <list>
 
 
 class Adjusters : public QVBoxLayout
@@ -12,15 +13,22 @@ class Adjusters : public QVBoxLayout
     Q_OBJECT
 
 public:
-    Adjusters(QString text,double upper, double lower);
+    double current;
+    QString whoami;
+    QPushButton *top;
+    QPushButton *bottom;
+    Adjusters(QString text); // changed by Ted
     ~Adjusters();
 
 private:
-    QPushButton *top;
-    QPushButton *bottom;
-    QTextEdit *text;
-    double upperLimit;
-    double lowerLimit;
+    QLabel *text;
+    std::list<double> values;
+    std::list<double>::iterator pos;
+
+    void initValues(QString text);
+private slots:
+    void handleUp();
+    void handleDown();
 };
 
 #endif // ADJUSTERS_H
