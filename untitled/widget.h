@@ -6,6 +6,7 @@
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QMessageBox>
 #include <controls.h>  // added by Ted
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,6 +37,8 @@ private:
     Adjusters *shutter;
     Adjusters *aperture;
     Adjusters *exposure;
+    QPushButton *calibrate;
+    QMessageBox *alert;
     Ui::Widget *ui;
     controls *motor_control; // added by Ted
 	bool thread_alive;
@@ -44,6 +47,7 @@ private:
     
 public slots:
     void setTimer();
+    void showDialog(int);
 };
 
 #endif // WIDGET_H

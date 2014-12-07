@@ -1,6 +1,11 @@
 #include "motor.h"
 #include <stdlib.h>
 #include <cstring>
+#include <stdio.h>
+#include <ctype.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
 motor::motor(int max, char* device)
 {
     char buffR[4];
@@ -61,27 +66,28 @@ int motor::moveMotor(char dir, int step)
     if(!this->dev)
         printf("file llost \n");
 
-    if(dir == 'b' && steps == 0)
+    if(dir == 'f' && steps == 0)
     {
-        return -1;
+        return -5;
     }
-    else if(dir == 'f' && steps == maxStep)
+    else if(dir == 'b' && steps == maxStep)
     {
-        return 1;
+        return -5;
     }
 
 
-    if(dir == 'b' && steps-step < 0) // prevent the motor from going beyond off pos
+    if(dir == 'f' && steps-step < 0) // prevent the motor from going beyond off pos
     {
         step = steps;
     }
-    else if(dir == 'f' && steps+step >= maxStep) // prevent the motor from going beyond the max pos
+    else if(dir == 'b' && steps+step >= maxStep) // prevent the motor from going beyond the max pos
     {
         step = maxStep - steps;
     }
     sprintf(command,"%cg%d",dir,step);
     printf("%s\n",command);
     this->dev = fopen(this->deviceName,"w");
+    
     int ret = fwrite(command,sizeof(command),1,dev);
     fclose(this->dev);
     if(ret != sizeof(command))
@@ -91,3 +97,4 @@ int motor::moveMotor(char dir, int step)
     }
     return 0;
 }
+

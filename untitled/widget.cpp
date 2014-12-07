@@ -19,7 +19,9 @@ Widget::Widget(QWidget *parent) :
     ui(new Ui::Widget)
 {
     //added by Ted
+    cout << "creating widget..."<< endl;
 	thread_alive = false;
+    motor_control = new controls();
 	// stop adding
 	
     ui->setupUi(this);
@@ -27,6 +29,10 @@ Widget::Widget(QWidget *parent) :
     shutter = new Adjusters("shutter");   
     aperture = new Adjusters("aperture"); 
     exposure = new Adjusters("exposure"); 
+    calibrate = new QPushButton("Calibrate");
+    alert = new QMessageBox();
+    alert->setText("Lux Value too high!");
+
     overAll = new QVBoxLayout(this);
     boxBox = new QHBoxLayout();
     boxBox->addLayout(iso);
@@ -34,19 +40,18 @@ Widget::Widget(QWidget *parent) :
     boxBox->addLayout(aperture);
     boxBox->addLayout(exposure);
     overAll->addLayout(boxBox);
+    overAll->addWidget(calibrate);
     overAll->setSpacing(10);
     this->setStyleSheet("background-color: white;");
 
 	// connect signal and slot
-	connect(this->iso->top,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->iso->bottom,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->aperture->top,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->aperture->bottom,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->shutter->top,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->shutter->bottom,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->exposure->top,SIGNAL(released()),this,SLOT(setTimer()));
-	connect(this->exposure->bottom,SIGNAL(released()),this,SLOT(setTimer()));
+	connect(this->calibrate,SIGNAL(released()),this,SLOT(setTimer()));
+    connect(this->motor_control,SIGNAL(errorOccurs(int)),this,SLOT(showDialog(int)));
+
+    //showFullScreen();
+
 	// stop adding
+    cout << "widget creation complete..." << endl;
 }
 
 Widget::~Widget()
@@ -58,23 +63,18 @@ Widget::~Widget()
 
 void Widget::setParameter()
 {
-	thread_alive = true;
+	int lux;
+    thread_alive = true;
 	sleep(3);
     // read lux reading from /proc/fortune
-    FILE * pFile = fopen("/proc/fortune", "r");
-    char content[10] = {0};
-    int lux;
-    fread(content,10,1,pFile);
-    sscanf(content,"%d",&lux);
-    fclose(pFile);
-    // motor control
-    /*motor_control->calculate(iso->current, 
-                            aperture->current,
-                            shutter->current,
-                            exposure->current,
-                            lux);
-	*/
-	cout << "lux: "<< lux<<endl;
+    lux = motor_control->calculate( iso->current, 
+                                    aperture->current,
+                                    shutter->current,
+                                    exposure->current);
+
+
+ 
+
 	thread_alive = false;
 }
 
@@ -92,4 +92,9 @@ void Widget::setTimer(){
 	rc = pthread_create(&thread,NULL, Widget::staticEntryPoint,this);
 	
 	
+}
+
+void Widget::showDialog(int luxRequired){
+    if (luxRequired > 100)
+        this->alert->show();
 }

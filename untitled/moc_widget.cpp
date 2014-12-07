@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'widget.h'
 **
-** Created: Thu Dec 4 19:59:23 2014
+** Created: Sun Dec 7 00:33:13 2014
 **      by: The Qt Meta Object Compiler version 61 (Qt 4.5.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,19 +23,20 @@ static const uint qt_meta_data_Widget[] = {
        2,       // revision
        0,       // classname
        0,    0, // classinfo
-       1,   12, // methods
+       2,   12, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
 
  // slots: signature, parameters, type, tag, flags
        8,    7,    7,    7, 0x0a,
+      19,    7,    7,    7, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_Widget[] = {
-    "Widget\0\0setTimer()\0"
+    "Widget\0\0setTimer()\0showDialog(int)\0"
 };
 
 const QMetaObject Widget::staticMetaObject = {
@@ -64,9 +65,10 @@ int Widget::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_c == QMetaObject::InvokeMetaMethod) {
         switch (_id) {
         case 0: setTimer(); break;
+        case 1: showDialog((*reinterpret_cast< int(*)>(_a[1]))); break;
         default: ;
         }
-        _id -= 1;
+        _id -= 2;
     }
     return _id;
 }

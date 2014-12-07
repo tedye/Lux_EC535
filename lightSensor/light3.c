@@ -26,11 +26,13 @@
 int main()
 {
 	int file;
-	volatile unsigned addr = 0x39;
+	volatile unsigned addr = 0x29;
 	char *filename = "/dev/i2c-0";
 	unsigned buf,buf2, channel0, channel1;
 	int Lux;
+	int avgLux;
 	char str[10];
+	int loop;
 	/*char* buf;
 	char* buf2;
 	buf = malloc(sizeof(char)*2);
@@ -66,33 +68,48 @@ int main()
 	buf = i2c_smbus_read_byte_data(file,COMMAND|ID);
 	printf("ID %x\n",buf);
 	// reading channel 0
+	//i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
 	while(1)
 	{
-		usleep(101000);
-		/*write(file,COMMAND|WORD|HIGH,1);
-		read(file,buf,1);
-		write(file,COMMAND|WORD|LOW,1);
-		read(file,buf2,2);*/
-		
-		buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH0);
-		buf <<= 8;
-		buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW0);
-		buf |= buf2;
-		channel0 = buf;
+		avgLux = 0;
+		loop = 0;
+		while(loop<10)
+		{
+			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,ON);
+			usleep(101000);
+			/*write(file,COMMAND|WORD|HIGH,1);
+			read(file,buf,1);
+			write(file,COMMAND|WORD|LOW,1);
+			read(file,buf2,2);*/
+			
+			buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH0);
+			buf <<= 8;
+			buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW0);
+			buf |= buf2;
+			channel0 = buf;
 
-		buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH1);
-		buf <<= 8;
-		buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW1);
-		buf |= buf2;
-		channel1 = buf;
+			buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH1);
+			buf <<= 8;
+			buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW1);
+			buf |= buf2;
+			channel1 = buf;
 
-		Lux = CalculateLux(0,1,channel0,channel1,0);
+
+			Lux = CalculateLux(0,1,channel1,channel0,0);
+			avgLux += Lux;
+			
+			//printf("value %d\n",Lux);
+			loop++;
+			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
+		}
+		avgLux = avgLux/10;
 		FILE * pFile = fopen("/proc/fortune", "w");
-		
-		sprintf(str,"%d",Lux);
+		sprintf(str,"%d",avgLux);
 		fwrite(str,1,sizeof(str),pFile);
 		fclose(pFile);
-		//printf("value %d\n",Lux);
-			
+		printf("%d\n",avgLux);
+		//printf("avg %d\n",avgLux);
+
 	}
+		close(file);
 }

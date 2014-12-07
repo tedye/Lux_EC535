@@ -84,7 +84,7 @@ void Adjusters::initValues(QString text)
 void Adjusters::handleUp()
 {
     char temp[30];
-    if(pos != values.end())
+    if(pos != (--values.end()))
     {
         sprintf(temp,"%1g",*(++pos));
         this->text->setText(QString(temp));

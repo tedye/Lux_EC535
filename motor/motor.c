@@ -69,6 +69,7 @@ static int timer_open(struct inode *inode, struct file *filp);
 static int timer_read(struct file *filp,char *buf, size_t count, loff_t *f_pos);
 static int timer_release(struct inode *inode, struct file *filp);
 
+
 //static void motor_handler(unsigned long data);
 static enum hrtimer_restart motor_handler(struct hrtimer *timer);
 //static void m_reset(unsigned long data);
@@ -123,7 +124,7 @@ static int motor_init(void)
     motor_reset.function = &m_reset;
     step = 0;
 
-    k_motor = ktime_set(0,2*1E4L);
+    k_motor = ktime_set(0,2*1E6L);
 
     printk(KERN_INFO "motor: Module installed\n");
   }
@@ -212,6 +213,13 @@ static enum hrtimer_restart motor_handler(struct hrtimer *timer)
 	//mod_timer(&(motor_timer),jiffies + (.01*HZ));
   hrtimer_start(&motor_timer,k_motor,HRTIMER_MODE_REL);
 	stepsWanted--;
+  }
+  else
+  {
+    pxa_gpio_set_value(P1,0);
+    pxa_gpio_set_value(P2,0);
+    pxa_gpio_set_value(P3,0);
+    pxa_gpio_set_value(P4,0);
   }
 
 
