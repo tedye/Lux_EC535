@@ -14,6 +14,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include "meterWidget.h"
 
 namespace Ui {
 class Widget;
@@ -38,16 +39,20 @@ private:
     Adjusters *aperture;
     Adjusters *exposure;
     QPushButton *calibrate;
+    QPushButton *swap;
     QMessageBox *alert;
     Ui::Widget *ui;
     controls *motor_control; // added by Ted
 	bool thread_alive;
 	pthread_t thread;
+    bool LampMode;
+    meterWidget *n;
 	
     
 public slots:
     void setTimer();
-    void showDialog(int);
+    void showDialog(int,int,bool);
+    void swapMode();
 };
 
 #endif // WIDGET_H

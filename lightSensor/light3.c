@@ -33,6 +33,8 @@ int main()
 	int avgLux;
 	char str[10];
 	int loop;
+	int avg;
+	avg = 3;
 	/*char* buf;
 	char* buf2;
 	buf = malloc(sizeof(char)*2);
@@ -73,7 +75,7 @@ int main()
 	{
 		avgLux = 0;
 		loop = 0;
-		while(loop<10)
+		while(loop<avg)
 		{
 			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,ON);
 			usleep(101000);
@@ -102,12 +104,16 @@ int main()
 			loop++;
 			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
 		}
-		avgLux = avgLux/10;
+		avgLux = avgLux/avg;
+		if(avgLux >= 40000)
+			avgLux = 500;
+		else if (avgLux == 0)
+			avgLux = 100;
 		FILE * pFile = fopen("/proc/fortune", "w");
 		sprintf(str,"%d",avgLux);
 		fwrite(str,1,sizeof(str),pFile);
 		fclose(pFile);
-		printf("%d\n",avgLux);
+		//printf("%d\n",avgLux);
 		//printf("avg %d\n",avgLux);
 
 	}

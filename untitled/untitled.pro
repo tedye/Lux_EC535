@@ -18,14 +18,16 @@ SOURCES += main.cpp\
     motor.cpp \
     bluetooth.cpp \
     controls.cpp \
-    light.cpp
+    light.cpp \
+    meterWidget.cpp
 
 HEADERS  += widget.h \
     adjusters.h \
     motor.h \
     bluetooth.h \
     controls.h \
-    light.h
+    light.h \
+    meterWidget.h
 
 FORMS    += widget.ui
 

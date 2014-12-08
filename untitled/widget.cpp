@@ -1,4 +1,5 @@
 #include "widget.h"
+#include "meterWidget.h"
 #include "ui_widget.h"
 #include <QIcon>
 #include <QPixmap>
@@ -21,6 +22,7 @@ Widget::Widget(QWidget *parent) :
     //added by Ted
     cout << "creating widget..."<< endl;
 	thread_alive = false;
+    LampMode = true;
     motor_control = new controls();
 	// stop adding
 	
@@ -30,8 +32,10 @@ Widget::Widget(QWidget *parent) :
     aperture = new Adjusters("aperture"); 
     exposure = new Adjusters("exposure"); 
     calibrate = new QPushButton("Calibrate");
+    swap = new QPushButton(QIcon(QPixmap(":/Images/camera.png")),"",0);
     alert = new QMessageBox();
-    alert->setText("Lux Value too high!");
+    n = new meterWidget();
+    //alert->setText("Lux Value too high!");
 
     overAll = new QVBoxLayout(this);
     boxBox = new QHBoxLayout();
@@ -39,16 +43,18 @@ Widget::Widget(QWidget *parent) :
     boxBox->addLayout(shutter);
     boxBox->addLayout(aperture);
     boxBox->addLayout(exposure);
+    overAll->addWidget(swap);
     overAll->addLayout(boxBox);
     overAll->addWidget(calibrate);
     overAll->setSpacing(10);
+    swap->setIconSize(QSize(50,50));
     this->setStyleSheet("background-color: white;");
 
 	// connect signal and slot
 	connect(this->calibrate,SIGNAL(released()),this,SLOT(setTimer()));
-    connect(this->motor_control,SIGNAL(errorOccurs(int)),this,SLOT(showDialog(int)));
-
-    //showFullScreen();
+    connect(this->motor_control,SIGNAL(errorOccurs(int,int,bool)),this,SLOT(showDialog(int,int,bool)));
+    connect(this->swap,SIGNAL(released()),this,SLOT(swapMode()));
+    showFullScreen();
 
 	// stop adding
     cout << "widget creation complete..." << endl;
@@ -94,7 +100,26 @@ void Widget::setTimer(){
 	
 }
 
-void Widget::showDialog(int luxRequired){
-    if (luxRequired > 100)
+void Widget::showDialog(int steps, int max, bool okay){
+    if (steps == 0 && !okay){
+        this->alert->setText("Lux value set to minimum, can't make enviornment darker.");
         this->alert->show();
+    }
+    else if (steps == max && !okay){
+        this->alert->setText("Lux value set to maximum, unable to make enviornment any brighter");
+        this->alert->show();
+    }
+    else if (!okay){
+        this->alert->setText("Unknown Error Occured");
+        this->alert->show();
+    }
+}
+
+void Widget::swapMode(){
+    //this->hide();
+    n->show();
+    n->raise();
+    n->activateWindow();
+    this->update();
+
 }

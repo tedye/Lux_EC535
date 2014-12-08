@@ -14,13 +14,13 @@ class Adjusters : public QVBoxLayout
 
 public:
     double current;
-    QString whoami;
     QPushButton *top;
     QPushButton *bottom;
     Adjusters(QString text); // changed by Ted
     ~Adjusters();
 
 private:
+    QLabel *whoami;
     QLabel *text;
     std::list<double> values;
     std::list<double>::iterator pos;

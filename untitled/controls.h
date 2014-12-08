@@ -13,7 +13,7 @@ public:
     int calculate(double iso, double aperture, double shutter, double exposure);
 
 signals:
-  	void errorOccurs(int luxRequired);
+  	void errorOccurs(int steps, int stepsMax, bool okay);
 
 private:
     motor *turner;

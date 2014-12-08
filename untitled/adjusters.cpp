@@ -11,9 +11,10 @@ Adjusters::Adjusters(QString text):QVBoxLayout()
     this->bottom = new QPushButton(QIcon(QPixmap(":/Images/down.png")),"",0);
     this->text = new QLabel(text);
     this->initValues(text);
-    this->whoami = text;
+    this->whoami = new QLabel(text);
 
     // adding widgets
+    this->addWidget(this->whoami);
     this->addWidget(top);
     this->addWidget(this->text);
     this->addWidget(bottom);
@@ -25,6 +26,7 @@ Adjusters::Adjusters(QString text):QVBoxLayout()
     bottom->setStyleSheet("QPushButton{border: none; outline: none;}");
     bottom->setFixedWidth(20);
     top->setFixedWidth(20);
+    this->setAlignment(whoami,Qt::AlignHCenter);
     this->setAlignment(bottom,Qt::AlignHCenter);
     this->setAlignment(top,Qt::AlignHCenter);
     this->setAlignment(this->text,Qt::AlignHCenter);
@@ -45,6 +47,8 @@ Adjusters::~Adjusters()
 
 void Adjusters::initValues(QString text)
 {
+    char sample[30];
+    int j = 0;
     if(text == "iso")
     {
         for(double i = 100.0; i <= 3200.0; i = i*2.0)
@@ -73,11 +77,19 @@ void Adjusters::initValues(QString text)
             values.push_back(i);
         }
     }
-    char sample[30];
-    sprintf(sample,"%1g",values.front());
+    std::list<double>::iterator i = values.begin();
+    while(values.size()/2 != j++) i++;
+    /*
+    int size = values.size()/2;
+    for(int j = 0; j != size; j++)
+    {
+        i++;
+    }
+    */
+    this->pos = i;
+    current = *i;
+    sprintf(sample,"%1g",current);
     this->text->setText(QString(sample));
-    this->pos = values.begin();
-    current = values.front();
 }
 
 

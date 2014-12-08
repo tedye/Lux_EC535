@@ -22,11 +22,10 @@ motor::motor(int max, char* device)
     }
     else
     {
+        printf("reading data\n");
         fread(buffR,4,1,this->save);
         this->steps = atoi(buffR);
-        buffW[0] = 'w';
-        strcpy(buffW+1,buffR);
-        fwrite(buffW,5,1,dev);
+        printf("got steps %d\n",this->steps);
     }
     //fclose(this->save);
     this->maxStep = max;
