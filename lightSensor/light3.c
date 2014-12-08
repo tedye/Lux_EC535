@@ -22,6 +22,11 @@
 #define ID 0x0A
 #define BLOCK 0x10
 
+/*
+	This is a service application that reads data from the TSL2561 and calculates the Lux.
+	Values are written to the application folder under /etc/lux/
+*/
+
 int main()
 {
 	int file;
@@ -34,10 +39,6 @@ int main()
 	int loop;
 	int avg;
 	avg = 3;
-	/*char* buf;
-	char* buf2;
-	buf = malloc(sizeof(char)*2);
-	buf2 = malloc(sizeof(char));*/
 	if((file = open(filename, O_RDWR)) < 0)
 	{
 		printf("Failed to open\n");
@@ -49,27 +50,12 @@ int main()
 		exit(1);
 	}
 
-	// turning it on
-	/*write(file,COMMAND|CONTROL,1);
-	write(file,ON,1);*/
-
 	i2c_smbus_write_byte_data(file,COMMAND|CONTROL,ON);
-
-	// setting up timing and gain
-	/*write(file,COMMAND|TIMING,1);
-	write(file,GAIN|TIMING,1);*/
 
 	i2c_smbus_write_byte_data(file,COMMAND|TIMING,GAIN|TIMING);
 
-	/*write(file,COMMAND|ID,1);
-	read(file,buf,1);
-	read(file,buf2,1);
-	printf("buf %x, buf2 %x\n",*buf,*buf2);*/
-
 	buf = i2c_smbus_read_byte_data(file,COMMAND|ID);
 	printf("ID %x\n",buf);
-	// reading channel 0
-	//i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
 	while(1)
 	{
 		avgLux = 0;
@@ -78,28 +64,25 @@ int main()
 		{
 			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,ON);
 			usleep(101000);
-			/*write(file,COMMAND|WORD|HIGH,1);
-			read(file,buf,1);
-			write(file,COMMAND|WORD|LOW,1);
-			read(file,buf2,2);*/
 			
+			/*buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW0);
 			buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH0);
 			buf <<= 8;
-			buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW0);
 			buf |= buf2;
-			channel0 = buf;
+			channel0 = buf;*/
+			channel0 = i2c_smbus_read_word_data(file,COMMAND|WORD|LOW0);
 
+			/*buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW1);
 			buf = i2c_smbus_read_byte_data(file,COMMAND|WORD|HIGH1);
 			buf <<= 8;
-			buf2 = i2c_smbus_read_byte_data(file,COMMAND|WORD|LOW1);
 			buf |= buf2;
-			channel1 = buf;
+			channel1 = buf;*/
+			channel1 = i2c_smbus_read_word_data(file,COMMAND|WORD|LOW1);
 
 
-			Lux = CalculateLux(0,1,channel1,channel0,0);
+			Lux = CalculateLux(0,1,channel0,channel1,0);
 			avgLux += Lux;
 			
-			//printf("value %d\n",Lux);
 			loop++;
 			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
 		}
@@ -112,8 +95,6 @@ int main()
 		sprintf(str,"%d",avgLux);
 		fwrite(str,1,sizeof(str),pFile);
 		fclose(pFile);
-		//printf("%d\n",avgLux);
-		//printf("avg %d\n",avgLux);
 
 	}
 		close(file);
