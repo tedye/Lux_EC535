@@ -3,7 +3,6 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include "i2c-dev.h"
-//#include <linux/i2c.h>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -109,7 +108,7 @@ int main()
 			avgLux = 500;
 		else if (avgLux == 0)
 			avgLux = 100;
-		FILE * pFile = fopen("/proc/fortune", "w");
+		FILE * pFile = fopen("/etc/lux/Lux", "w");
 		sprintf(str,"%d",avgLux);
 		fwrite(str,1,sizeof(str),pFile);
 		fclose(pFile);
