@@ -29,12 +29,9 @@
   Consult your manual if you're using this for something else...
 */
 
+
 /*
-  Current thoughts...
-  Global Variable for keeping what step/4 you're on?
-  How fast should this motor go? 1HZ per step?
-  Need to keep count how many total steps this motor has gone through in one direction
-  Light dimmer switch does not do a full 360!!!
+  High-res timers are used 
 */
 
 #define P1	28 // blue wire
@@ -49,8 +46,8 @@
 MODULE_LICENSE("Dual BSD/GPL");
 MODULE_DESCRIPTION("Stepper Module");
 
-static struct hrtimer motor_timer, motor_reset;
-static ktime_t k_motor, k_motor_reset;
+static struct hrtimer motor_timer;
+static ktime_t k_motor;
 static int step;
 static int totalSteps;
 static unsigned stepsWanted;
@@ -62,26 +59,27 @@ static int count = 0;
 
 static int motor_init(void);
 static void motor_exit(void);
+
 static ssize_t motor_write( struct file *filp, const char __user *buff,
                       size_t len, loff_t *f_pos);
+static int motor_open(struct inode *inode, struct file *filp);
+static int motor_read(struct file *filp,char *buf, size_t count, loff_t *f_pos);
+static int motor_release(struct inode *inode, struct file *filp);
 
-static int timer_open(struct inode *inode, struct file *filp);
-static int timer_read(struct file *filp,char *buf, size_t count, loff_t *f_pos);
-static int timer_release(struct inode *inode, struct file *filp);
-
-
-//static void motor_handler(unsigned long data);
+// timer call back function
 static enum hrtimer_restart motor_handler(struct hrtimer *timer);
-//static void m_reset(unsigned long data);
-static enum hrtimer_restart m_reset(struct hrtimer *timer);
+
+// forward stepping function
 static void do_step(void);
+
+// backwards stepping function
 static void do_step_b(void);
 
 static struct file_operations motor_fops = {
 	write:motor_write,
-	open: timer_open,
-	release: timer_release,
-	read: timer_read
+	open: motor_open,
+	release: motor_release,
+	read: motor_read
 };
 
 static int motor_init(void)
@@ -114,23 +112,19 @@ static int motor_init(void)
     pxa_gpio_set_value(P3,0);
     pxa_gpio_set_value(P4,0);
 
-    /*
-    setup_timer(&(motor_timer), motor_handler, 0);
-    setup_timer(&(motor_reset),m_reset,0);
-    */
+    // initialize our timer, but not starting it
     hrtimer_init(&motor_timer,CLOCK_MONOTONIC,HRTIMER_MODE_REL);
     motor_timer.function = &motor_handler;
-    hrtimer_init(&motor_reset,CLOCK_MONOTONIC,HRTIMER_MODE_REL);
-    motor_reset.function = &m_reset;
+    
     step = 0;
 
+    // High-res timers require you to set your time as a ktimer variable
     k_motor = ktime_set(0,2*1E6L);
 
     printk(KERN_INFO "motor: Module installed\n");
   }
 
 fail:
-	printk(KERN_INFO "motor: \n");
   return result;
 
 }
@@ -138,17 +132,26 @@ fail:
 static void motor_exit(void)
 {
     unregister_chrdev(major, "motor");
-	  //del_timer(&motor_timer);
     hrtimer_cancel(&motor_timer);
-    hrtimer_cancel(&motor_reset);
     kfree(buffer);
     printk(KERN_INFO "motor: Module removed\n");
 }
 
+/*
+  Module accepts a command in the following format %c%c%d
+  arg1:
+    f - forward
+    b - backwards
+  arg2: 
+    g - go
+    s - stop
+  arg3:
+    # - steps to move
+*/
+
 static ssize_t motor_write( struct file *filp, const char __user *buff,
                       size_t len, loff_t *f_pos)
 {
-  int set;
   memset(buffer, 0, cap);
   if (copy_from_user(buffer, buff, len)){
     return -EFAULT;
@@ -162,9 +165,6 @@ static ssize_t motor_write( struct file *filp, const char __user *buff,
     case 'b':
       direction = BACKWARD;
       break;
-    case 'w':
-      set = 1;
-      break;
     default:
       printk(KERN_ALERT "wrong input\n");
       break;
@@ -173,17 +173,10 @@ static ssize_t motor_write( struct file *filp, const char __user *buff,
 
     switch(buffer[1]){
       case 'g':
-        //mod_timer(&(motor_timer), jiffies + (.02*HZ));
         hrtimer_start(&motor_timer,k_motor,HRTIMER_MODE_REL);
-        //pxa_gpio_set_value(P1,1);
-        //count = 0;
-	printk(KERN_ALERT "GO\n");
         break;
       case 's':
-        //pxa_gpio_set_value(P1,0);
-        //del_timer(&(motor_timer));
         hrtimer_cancel(&motor_timer);
-        hrtimer_cancel(&motor_reset);
         pxa_gpio_set_value(P1,0);
         pxa_gpio_set_value(P2,0);
         pxa_gpio_set_value(P3,0);
@@ -196,23 +189,27 @@ static ssize_t motor_write( struct file *filp, const char __user *buff,
   
 
   stepsWanted = simple_strtoul((buffer+2), NULL, 10);
-  //k_motor_reset = ktime_set(0,stepsWanted*1E5L);
   printk(KERN_INFO "steps: %u\n", stepsWanted);
   return len;
 }
 
 
+/*
+  FYI you absolutely must set all GPIO pins to low after finishing motor movements
+  
+  Forgetting to set all GPIO pins to 0 after finishing motor movements will result in the motor
+  heating up to dangerous levels
+*/
+
 static enum hrtimer_restart motor_handler(struct hrtimer *timer)
 {
-	printk(KERN_INFO "handled\n");
   (direction > 0) ? do_step() : do_step_b();
   step = (( (step+direction) % 4 ) + 4) % 4;
   totalSteps = (( (totalSteps+direction) % 513) + 513) % 513;
   if(stepsWanted > 0)
   {
-	//mod_timer(&(motor_timer),jiffies + (.01*HZ));
-  hrtimer_start(&motor_timer,k_motor,HRTIMER_MODE_REL);
-	stepsWanted--;
+    hrtimer_start(&motor_timer,k_motor,HRTIMER_MODE_REL);
+	  stepsWanted--;
   }
   else
   {
@@ -222,30 +219,8 @@ static enum hrtimer_restart motor_handler(struct hrtimer *timer)
     pxa_gpio_set_value(P4,0);
   }
 
-
-  /*
-  pxa_gpio_set_value(P1,0);
-  //mod_timer(&(motor_reset),jiffies+((int) 0.05 * msec_to_jiffies(1));
-  hrtimer_start(&motor_reset,k_motor_reset,HRTIMER_MODE_REL);
-  /*msleep(1);
-  pxa_gpio_set_value(P1,0);
-  count++;
-  if(count < 5)
-    mod_timer(&(motor_timer),jiffies+(.02*HZ));
-  */
   return HRTIMER_NORESTART;
 
-}
-
-static enum hrtimer_restart m_reset(struct hrtimer *timer)
-{
-  printk(KERN_INFO "reset\n");
-  pxa_gpio_set_value(P1,1);
-  count++;
-  if(count < 100)
-    hrtimer_start(&motor_timer,k_motor,HRTIMER_MODE_REL);
-
-  return HRTIMER_NORESTART;
 }
 
 /*
@@ -317,30 +292,30 @@ static void do_step_b(void)
   };
 }
 
-static int timer_open(struct inode *inode, struct file *filp)
+
+/*
+  these follow FOPs don't need to do anything
+*/
+static int motor_open(struct inode *inode, struct file *filp)
 {
-  printk(KERN_ALERT "test\n");
 	return 0;
 }
 
-static int timer_release(struct inode *inode, struct file *filp)
+static int motor_release(struct inode *inode, struct file *filp)
 {
 	return 0;
 }
 
-static int timer_read(struct file *filp,char *buf, size_t count, loff_t *f_pos)
+static int motor_read(struct file *filp,char *buf, size_t count, loff_t *f_pos)
 {
-	memset(buffer, 0, cap);
-	sprintf(buffer,"%3u/513\n",totalSteps);
-	if (copy_to_user(buf, buffer, count))
-	{
-		return -EFAULT;
-	}
-	*f_pos = count;
 	return count;
 }
 
 
+
+/*
+  function defintions here are required for correct compilation
+*/
 void __aeabi_d2uiz(void){}
 void __aeabi_dadd(void){}
 void __aeabi_i2d(void){}
