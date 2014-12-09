@@ -9,10 +9,8 @@
 #include "luxcalc.h"
 #include <sys/socket.h>
 #include <error.h>
-#include "bluetooth.h"
-#include "rfcomm.h"
-#include "hci.h"
-#include "hci_lib.h"
+#include <bluetooth/bluetooth.h> //from bluez library
+#include <bluetooth/rfcomm.h> //from bluez library
 
 
 #define COMMAND 0x80
@@ -34,38 +32,7 @@
 	Values are written to the application folder under /etc/lux/
 */
 
-/* from git@gitorious.org:bluez/jdelfes-bluez.git */
-int str2ba(const char *str, bdaddr_t *ba)
-{
-	int i;
-	if (bachk(str) < 0) {
-		memset(ba, 0, sizeof(*ba));
-		return -1;
-	}
-	for (i = 5; i >= 0; i--, str += 3)
-		ba->b[i] = strtol(str, NULL, 16);
-	return 0;
-}
-
-int bachk(const char *str)
-{
-	if (!str)
-		return -1;
-	if (strlen(str) != 17)
-		return -1;
-	while (*str) {
-		if (!isxdigit(*str++))
-			return -1;
-		if (!isxdigit(*str++))
-			return -1;
-		if (*str == 0)
-			break;
-		if (*str++ != ':')
-			return -1;
-	}
-	return 0;
-}
-/* from git@gitorious.org:bluez/jdelfes-bluez.git end */
+#define BDADDR_SERVER (&(bdaddr_t) {{0x45,0x29,0x50,0x19,0x03,0x00}});
 
 int main()
 {
@@ -80,20 +47,27 @@ int main()
 	int avg;
 	// bluetooth connection setup
 	struct sockaddr_rc bluetooth_addr;
-	int listenfd, status;
-	//XX:XX:XX:XX:XX:XX IS BLUETOOTH ADDRESS
-	char dest[18] = "00:03:19:50:29:45";
-	int cc = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
+	int cc, status;
+
+	cc = socket(AF_BLUETOOTH, SOCK_STREAM, BTPROTO_RFCOMM);
 	if(cc < 0){
 		perror("Socket failed");
 		exit(1);
 	}
 	// set the connection parameters (who to connect to)
 	bluetooth_addr.rc_family = AF_BLUETOOTH;
-	bluetooth_addr.rc_channel = (uint8_t) 1;
-	str2ba( dest, &bluetooth_addr.rc_bdaddr );
+	bluetooth_addr.rc_channel = (uint8_t) 6;
+	bluetooth_addr.rc_bdaddr = *BDADDR_SERVER;
 	// connect to server
-	status = connect(listenfd, (struct sockaddr *)&bluetooth_addr, sizeof(bluetooth_addr));
+	do{
+		sleep(1);
+		status = connect(cc, (struct sockaddr *)&bluetooth_addr, sizeof(bluetooth_addr));
+		if(status < 0){
+			printf("connection failed\n");
+		}
+	}while(status < 0);
+	write(cc, "hello", 5);
+	printf("connection success\n");
 	// end of bluetooth setup. 
 
 
@@ -103,7 +77,7 @@ int main()
 		printf("Failed to open\n");
 		exit(1);
 	}
-	if (ioctl(file,I2C_SLAVE_FORCE,bluetooth_addr) < 0)
+	if (ioctl(file,I2C_SLAVE_FORCE,addr) < 0)
 	{
 		printf("Failed\n");
 		exit(1);
@@ -117,6 +91,7 @@ int main()
 	printf("ID %x\n",buf);
 	while(1)
 	{
+		printf("loop\n");
 		avgLux = 0;
 		loop = 0;
 		while(loop<avg)
@@ -144,25 +119,25 @@ int main()
 			
 			loop++;
 			i2c_smbus_write_byte_data(file,COMMAND|CONTROL,OFF);
+			printf("avgLux %d\n",avgLux);
 		}
+
 		avgLux = avgLux/avg;
 		if(avgLux >= 40000)
 			avgLux = 500;
 		else if (avgLux == 0)
 			avgLux = 100;
-		FILE * pFile = fopen("/etc/lux/Lux", "w");
 		sprintf(str,"%d",avgLux);
-		fwrite(str,1,sizeof(str),pFile);
-		fclose(pFile);
-		if( status == 0 ) {
-			status = write(listenfd, str, sizeof(str));
-		}
+		printf("sending data: %s \n",str);
+		
+		status = write(cc, str, sizeof(str));
+
+		
 		if( status < 0 ){
-		perror("data sending failed");
-		exit(1);
+			perror("data sending failed\n");
+			exit(1);
+		}
 	}
 
-
-	}
-		close(file);
+	close(file);
 }
